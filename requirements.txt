@@ -1,0 +1,4 @@
+# Core runtime dependencies for FlowBreak itself.
+requests>=2.31
+PyYAML>=6.0
+simpleeval>=0.9.13

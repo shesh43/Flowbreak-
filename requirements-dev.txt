@@ -1,0 +1,4 @@
+# Only needed to run the mock test targets in tests/ (not needed to use
+# FlowBreak against a real target).
+-r requirements.txt
+flask>=3.0

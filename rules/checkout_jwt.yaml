@@ -1,0 +1,48 @@
+workflow: ecommerce_checkout_jwt
+base_url: http://localhost:8097
+
+auth:
+  login_step: login
+  token_path: authentication.token
+  header: Authorization
+  prefix: "Bearer "
+
+steps:
+  - name: login
+    match: {method: POST, path_contains: /login}
+    extract: {}
+
+  - name: add_to_cart
+    match: {method: POST, path_contains: /cart/add}
+    extract:
+      cart.total: total
+
+  - name: apply_coupon
+    match: {method: POST, path_contains: /cart/coupon}
+    extract:
+      coupon.redeemed_count: redeemed_count
+      cart.total: total
+
+  - name: payment_confirm
+    match: {method: POST, path_contains: /payment/confirm}
+    extract:
+      payment.confirmed: confirmed
+
+  - name: checkout
+    match: {method: POST, path_contains: /checkout}
+    extract:
+      order.status: status
+      order.total: total
+
+rules:
+  - id: no_order_without_payment
+    assert: order.status != "complete" or payment.confirmed == True
+  - id: coupon_single_use
+    assert: coupon.redeemed_count <= 1
+
+techniques:
+  - type: step_skip
+    skip_step: payment_confirm
+  - type: repeat_abuse
+    target_step: apply_coupon
+    repeat_count: 3

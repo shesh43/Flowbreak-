@@ -1,0 +1,321 @@
+{
+  "tool": "FlowBreak",
+  "workflow": "ecommerce_checkout",
+  "generated_at": "2026-10-08T08:07:53.459774+00:00",
+  "tests": [
+    {
+      "technique_id": "step_skip",
+      "description": "Replay workflow with step 'payment_confirm' omitted",
+      "status": "VULNERABLE",
+      "skipped_reason": null,
+      "attack_blocked_reason": null,
+      "vulnerable": true,
+      "rules": [
+        {
+          "id": "no_order_without_payment",
+          "assert": "order.status != \"complete\" or payment.confirmed == True",
+          "result": "VIOLATED",
+          "error": null
+        },
+        {
+          "id": "coupon_single_use",
+          "assert": "coupon.redeemed_count <= 1",
+          "result": "HELD",
+          "error": null
+        },
+        {
+          "id": "no_negative_total",
+          "assert": "order.total > 0",
+          "result": "HELD",
+          "error": null
+        }
+      ],
+      "evidence": [
+        {
+          "step": "add_to_cart",
+          "note": "normal replay",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8099/cart/add",
+            "body": {
+              "product_id": 1,
+              "quantity": 2
+            }
+          },
+          "response": {
+            "status": 200,
+            "body": {
+              "item_count": 2,
+              "total": 20.0
+            },
+            "error": null
+          }
+        },
+        {
+          "step": "apply_coupon",
+          "note": "normal replay",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8099/cart/coupon",
+            "body": {
+              "code": "SAVE5"
+            }
+          },
+          "response": {
+            "status": 200,
+            "body": {
+              "redeemed_count": 1,
+              "total": 15.0
+            },
+            "error": null
+          }
+        },
+        {
+          "step": "checkout",
+          "note": "final step after skip",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8099/checkout",
+            "body": {}
+          },
+          "response": {
+            "status": 200,
+            "body": {
+              "status": "complete",
+              "total": 15.0
+            },
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "technique_id": "repeat_abuse",
+      "description": "Replay step 'apply_coupon' 3x beyond normal flow",
+      "status": "VULNERABLE",
+      "skipped_reason": null,
+      "attack_blocked_reason": null,
+      "vulnerable": true,
+      "rules": [
+        {
+          "id": "no_order_without_payment",
+          "assert": "order.status != \"complete\" or payment.confirmed == True",
+          "result": "HELD",
+          "error": null
+        },
+        {
+          "id": "coupon_single_use",
+          "assert": "coupon.redeemed_count <= 1",
+          "result": "VIOLATED",
+          "error": null
+        },
+        {
+          "id": "no_negative_total",
+          "assert": "order.total > 0",
+          "result": "COULD_NOT_EVALUATE",
+          "error": "rule references a value this technique never produced ('>' not supported between instances of 'NoneType' and 'int')"
+        }
+      ],
+      "evidence": [
+        {
+          "step": "add_to_cart",
+          "note": "normal replay",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8099/cart/add",
+            "body": {
+              "product_id": 1,
+              "quantity": 2
+            }
+          },
+          "response": {
+            "status": 200,
+            "body": {
+              "item_count": 2,
+              "total": 20.0
+            },
+            "error": null
+          }
+        },
+        {
+          "step": "apply_coupon",
+          "note": "normal replay",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8099/cart/coupon",
+            "body": {
+              "code": "SAVE5"
+            }
+          },
+          "response": {
+            "status": 200,
+            "body": {
+              "redeemed_count": 1,
+              "total": 15.0
+            },
+            "error": null
+          }
+        },
+        {
+          "step": "apply_coupon",
+          "note": "repeat attempt #1 (abuse)",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8099/cart/coupon",
+            "body": {
+              "code": "SAVE5"
+            }
+          },
+          "response": {
+            "status": 200,
+            "body": {
+              "redeemed_count": 2,
+              "total": 10.0
+            },
+            "error": null
+          }
+        },
+        {
+          "step": "apply_coupon",
+          "note": "repeat attempt #2 (abuse)",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8099/cart/coupon",
+            "body": {
+              "code": "SAVE5"
+            }
+          },
+          "response": {
+            "status": 200,
+            "body": {
+              "redeemed_count": 3,
+              "total": 5.0
+            },
+            "error": null
+          }
+        },
+        {
+          "step": "apply_coupon",
+          "note": "repeat attempt #3 (abuse)",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8099/cart/coupon",
+            "body": {
+              "code": "SAVE5"
+            }
+          },
+          "response": {
+            "status": 200,
+            "body": {
+              "redeemed_count": 4,
+              "total": 0.0
+            },
+            "error": null
+          }
+        }
+      ]
+    },
+    {
+      "technique_id": "field_tamper",
+      "description": "Replay step 'add_to_cart' with quantity tampered to -5",
+      "status": "VULNERABLE",
+      "skipped_reason": null,
+      "attack_blocked_reason": null,
+      "vulnerable": true,
+      "rules": [
+        {
+          "id": "no_order_without_payment",
+          "assert": "order.status != \"complete\" or payment.confirmed == True",
+          "result": "HELD",
+          "error": null
+        },
+        {
+          "id": "coupon_single_use",
+          "assert": "coupon.redeemed_count <= 1",
+          "result": "HELD",
+          "error": null
+        },
+        {
+          "id": "no_negative_total",
+          "assert": "order.total > 0",
+          "result": "VIOLATED",
+          "error": null
+        }
+      ],
+      "evidence": [
+        {
+          "step": "add_to_cart",
+          "note": "tampered request",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8099/cart/add",
+            "body": {
+              "product_id": 1,
+              "quantity": -5
+            }
+          },
+          "response": {
+            "status": 200,
+            "body": {
+              "item_count": -5,
+              "total": -50.0
+            },
+            "error": null
+          }
+        },
+        {
+          "step": "apply_coupon",
+          "note": "normal replay",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8099/cart/coupon",
+            "body": {
+              "code": "SAVE5"
+            }
+          },
+          "response": {
+            "status": 200,
+            "body": {
+              "redeemed_count": 1,
+              "total": 0.0
+            },
+            "error": null
+          }
+        },
+        {
+          "step": "payment_confirm",
+          "note": "normal replay",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8099/payment/confirm",
+            "body": {}
+          },
+          "response": {
+            "status": 200,
+            "body": {
+              "confirmed": true
+            },
+            "error": null
+          }
+        },
+        {
+          "step": "checkout",
+          "note": "normal replay",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:8099/checkout",
+            "body": {}
+          },
+          "response": {
+            "status": 200,
+            "body": {
+              "status": "complete",
+              "total": 0.0
+            },
+            "error": null
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+# HAR captures and Burp exports contain real credentials, session tokens,
+# and personal data from whatever target you captured - never commit them.
+*.har
+*.xml
+!tests/**/*.har
+
+# Your own run output - may contain target-specific data
+jshop_results.*
+flowbreak_results.*
+demo_results.*
+!examples/demo_results.*
+
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/

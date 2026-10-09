@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flowbreak"
+version = "0.1.0"
+description = "Business-logic security testing engine for web/API penetration testers"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31",
+    "PyYAML>=6.0",
+    "simpleeval>=0.9.13",
+]
+
+[project.scripts]
+flowbreak = "flowbreak.cli:main"
+
+[tool.setuptools]
+packages = ["flowbreak", "flowbreak.mutations"]

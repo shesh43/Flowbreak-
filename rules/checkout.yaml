@@ -1,0 +1,69 @@
+# FlowBreak workflow definition for an e-commerce checkout flow.
+#
+# `match.path_contains` is matched against each HAR request's URL path - it
+# does not need to be the full path, just enough to uniquely identify the
+# step among the requests you captured. Adjust these to match your own HAR
+# capture (field names below match the demo mock server used in FlowBreak's
+# own test suite - for Juice Shop you will need slightly different paths,
+# see README.md).
+
+workflow: ecommerce_checkout
+base_url: http://localhost:8099
+
+steps:
+  - name: add_to_cart
+    match:
+      method: POST
+      path_contains: /cart/add
+    extract:
+      cart.total: total
+      cart.item_count: item_count
+
+  - name: apply_coupon
+    match:
+      method: POST
+      path_contains: /cart/coupon
+    extract:
+      coupon.redeemed_count: redeemed_count
+      cart.total: total
+
+  - name: payment_confirm
+    match:
+      method: POST
+      path_contains: /payment/confirm
+    extract:
+      payment.confirmed: confirmed
+
+  - name: checkout
+    match:
+      method: POST
+      path_contains: /checkout
+    extract:
+      order.status: status
+      order.total: total
+
+rules:
+  - id: no_order_without_payment
+    description: Order must not complete unless payment was confirmed first
+    assert: order.status != "complete" or payment.confirmed == True
+
+  - id: coupon_single_use
+    description: A coupon must not be redeemable more than once
+    assert: coupon.redeemed_count <= 1
+
+  - id: no_negative_total
+    description: Cart/order total must never be negative or zero after a legitimate item was added
+    assert: order.total > 0
+
+techniques:
+  - type: step_skip
+    skip_step: payment_confirm
+
+  - type: repeat_abuse
+    target_step: apply_coupon
+    repeat_count: 3
+
+  - type: field_tamper
+    target_step: add_to_cart
+    field_path: quantity
+    tamper_value: -5
